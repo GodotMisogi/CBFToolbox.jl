@@ -7,7 +7,7 @@
         scale=0.15,
         lw=1,
         colormap=:viridis,
-        colorbar=true,
+        colorbar=false,
     )
 
 Plot the vector field `f(x,y)` over the region specified by xs and ys.
@@ -20,7 +20,7 @@ function plot_vector_field(
     scale=0.15,
     lw=1,
     colormap=:viridis,
-    colorbar=true,
+    colorbar=false,
 )
     # Make meshgrid from (xs, ys)
     Xs, Ys = meshgrid(xs, ys)
@@ -43,7 +43,7 @@ end
         scale=0.15,
         lw=1,
         colormap=:viridis,
-        colorbar=true,
+        colorbar=false,
     )
 
 Plot the vector field `f(x,y)` over the region specified by xs and ys.
@@ -56,7 +56,7 @@ function plot_vector_field!(
     scale=0.15,
     lw=1,
     colormap=:viridis,
-    colorbar=true,
+    colorbar=false,
 )
     # Make meshgrid from (xs, ys)
     Xs, Ys = meshgrid(xs, ys)

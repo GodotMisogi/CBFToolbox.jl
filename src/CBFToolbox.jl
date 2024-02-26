@@ -7,6 +7,7 @@ using JuMP
 using OSQP
 using Plots
 import DifferentialEquations: solve, ODEProblem
+using SimulationLogs
 
 # Abstract types
 abstract type System end

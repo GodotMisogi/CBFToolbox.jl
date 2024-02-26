@@ -16,8 +16,8 @@ struct ControlAffineSystem <: System
     m::Int
     f::Function
     g::Function
-    A
-    b
+    A::Any
+    b::Any
 end
 
 """
@@ -50,9 +50,9 @@ ControlAffineSystem(2, 1, f, g, [1.0; -1.0;;], [Inf, Inf])
 """
 function ControlAffineSystem(n::Int, m::Int, f::Function, g::Function)
     # Set unbounded control constraints
-    Nconstraints = 2*m
+    Nconstraints = 2 * m
     A = zeros(Nconstraints, m)
-    b = Inf*ones(Nconstraints)
+    b = Inf * ones(Nconstraints)
 
     # Populate entries of A matrix
     a = [1.0, -1.0]
@@ -67,7 +67,7 @@ end
 
 function ControlAffineSystem(n::Int, m::Int, f::Function, g::Function, U)
     # Convert list of control constraints to standard inequality contraints
-    Nconstraints = 2*m
+    Nconstraints = 2 * m
     A = zeros(Nconstraints, m)
     b = zeros(Nconstraints)
 
@@ -89,12 +89,12 @@ end
 ############################################################################################
 
 """
-    (S::Simulation)(Σ::ControlAffineSystem, x::Union{Float64, Vector{Float64}})
+    (S::Simulation)(Σ::ControlAffineSystem, x::Union{T, Vector{T}})
 
 Run open-loop simulation of control affine system from initial state x.
 """
-function (S::Simulation)(Σ::ControlAffineSystem, x::Union{Float64, Vector{Float64}})
-     # Make in-place and out of place rhs functions
+function (S::Simulation)(Σ::ControlAffineSystem, x::Union{T, Vector{T}}) where T <: Real
+    # Make in-place and out of place rhs functions
     rhs(x, p, t) = Σ.f(x)
 
     function rhs!(dx, x, p, t)
@@ -102,14 +102,14 @@ function (S::Simulation)(Σ::ControlAffineSystem, x::Union{Float64, Vector{Float
         nothing
     end
 
-    problem = S.inplace ? ODEProblem(rhs!, x, S.tf) :  ODEProblem(rhs, x, S.tf)
+    problem = S.inplace ? ODEProblem(rhs!, x, S.tf) : ODEProblem(rhs, x, S.tf)
     trajectory = solve(problem)
 
     return trajectory
 end
 
 """
-    (S::Simulation)(Σ::ControlAffineSystem, k::FeedbackController, x::Union{Float64, Vector{Float64}})
+    (S::Simulation)(Σ::ControlAffineSystem, k::FeedbackController, x::Union{T, Vector{T}})
 
 Run closed-loop simulation of control affine system from initial state x under feedback
 control policy.
@@ -117,44 +117,49 @@ control policy.
 function (S::Simulation)(
     Σ::ControlAffineSystem,
     k::FeedbackController,
-    x::Union{Float64, Vector{Float64}}
-    )
+    x::Union{T, Vector{T}},
+) where T <: Real
 
     # Make in-place and out of place rhs functions
-    rhs(x, p, t) = Σ.f(x) + Σ.g(x)*k(x)
+    function rhs(x, p, t)
+        @log u = k(x)
+        dx = Σ.f(x) + Σ.g(x) * u
+        return dx
+    end
 
     function rhs!(dx, x, p, t)
-        dx .= Σ.f(x) + Σ.g(x)*k(x)
+        @log u = k(x)
+        dx .= Σ.f(x) + Σ.g(x) * u
         nothing
     end
 
-    problem = S.inplace ? ODEProblem(rhs!, x, S.tf) :  ODEProblem(rhs, x, S.tf)
+    problem = S.inplace ? ODEProblem(rhs!, x, S.tf) : ODEProblem(rhs, x, S.tf)
     trajectory = solve(problem)
 
     return trajectory
 end
 
 """
-    (S::Simulation)(Σ::ControlAffineSystem, X::Vector{Vector{Float64}})
+    (S::Simulation)(Σ::ControlAffineSystem, X::Vector{Vector{T}})
 
 Run multiple open-loop simulations of control affine system from initial states X.
 """
-function (S::Simulation)(Σ::ControlAffineSystem, X::Vector{Vector{Float64}})
+function (S::Simulation)(Σ::ControlAffineSystem, X::Vector{Vector{T}}) where T <: Real
     trajectories = [S(Σ, x) for x in X]
 
     return trajectories
 end
 
 """
-    (S::Simulation)(Σ::ControlAffineSystem, k::FeedbackController, X::Vector{Vector{Float64}})
+    (S::Simulation)(Σ::ControlAffineSystem, k::FeedbackController, X::Vector{Vector{T}})
 
 Run multiple closed-loop simulations of a control affine system from initial states X.
 """
 function (S::Simulation)(
     Σ::ControlAffineSystem,
     k::FeedbackController,
-    X::Vector{Vector{Float64}}
-    )
+    X::Vector{Vector{T}},
+) where T <: Real
     trajectories = [S(Σ, k, x) for x in X]
 
     return trajectories

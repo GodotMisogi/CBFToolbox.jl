@@ -9,15 +9,16 @@ Control Lyapunov Function (CLF) for a control affine system.
 - `relax` : bool that indicates if we want to relax the CLF constraint in a QP
 - `p`: relaxation penality on CLF constraints. Only relevant if relax = true
 """
-struct ControlLyapunovFunction <: CertificateFunction
+struct ControlLyapunovFunction{T <: Real} <: CertificateFunction
     V::Function
     α::Function
     relax::Bool
-    p::Float64
+    p::T
 end
 
 "Constructors for `ControlLyapunovFunction`. If `α` not passed in, set it to `α(x)=V(x)`."
-ControlLyapunovFunction(V::Function, α::Function) = ControlLyapunovFunction(V, α, false, 0.0)
+ControlLyapunovFunction(V::Function, α::Function) =
+    ControlLyapunovFunction(V, α, false, 0.0)
 ControlLyapunovFunction(V::Function) = ControlLyapunovFunction(V, x -> V(x), false, 0.0)
 
 "Set CLF stability margin to what we would obtain if using Sontag's formula."
@@ -29,7 +30,7 @@ function ControlLyapunovFunction(V::Function, Σ::ControlAffineSystem)
 
     return ControlLyapunovFunction(V, α)
 end
-function ControlLyapunovFunction(V::Function, Σ::ControlAffineSystem, relax::Bool, p::Float64)
+function ControlLyapunovFunction(V::Function, Σ::ControlAffineSystem, relax::Bool, p::Real)
     CLF = ControlLyapunovFunction(V)
     a(x) = drift_lie_derivative(CLF, Σ, x)
     b(x) = control_lie_derivative(CLF, Σ, x)
@@ -40,7 +41,8 @@ end
 
 "Compute gradient of a CLF evaluated at `x`."
 function gradient(CLF::ControlLyapunovFunction, x)
-    return length(x) == 1 ? ForwardDiff.derivative(CLF.V, x) : ForwardDiff.gradient(CLF.V, x)'
+    return length(x) == 1 ? ForwardDiff.derivative(CLF.V, x) :
+           ForwardDiff.gradient(CLF.V, x)'
 end
 
 "Compute Lie derivatives of CLF along system dynamics."

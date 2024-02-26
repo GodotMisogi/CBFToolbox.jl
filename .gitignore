@@ -30,3 +30,4 @@ old/
 benchmarking/
 .vscode
 .DS_Store
+.CondaPkg

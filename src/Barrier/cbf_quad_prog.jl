@@ -9,10 +9,10 @@ for a control affine system
 - `H` : quadratic weight in QP objective
 - `F` : linear weight in QP objective
 """
-struct CBFQuadProg <: FeedbackController
+struct CBFQuadProg{T <: Real} <: FeedbackController
     solve::Function
-    H::Union{Float64, Matrix{Float64}, Function}
-    F::Union{Float64, Vector{Float64}, Function}
+    H::Union{T, Matrix{T}, Function}
+    F::Union{T, Vector{T}, Function}
 end
 
 "Solve `CBFQuadProg` at state `x`."
@@ -27,7 +27,7 @@ function CBFQuadProg(Σ::ControlAffineSystem, CBFs::Vector{ControlBarrierFunctio
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Set CBF constraint and objective
@@ -35,9 +35,9 @@ function CBFQuadProg(Σ::ControlAffineSystem, CBFs::Vector{ControlBarrierFunctio
             Lfh = drift_lie_derivative(CBF, Σ, x)
             Lgh = control_lie_derivative(CBF, Σ, x)
             α = CBF.α(CBF.h(x))
-            @constraint(model, Lfh + Lgh*u >= -α)
+            @constraint(model, Lfh + Lgh * u >= -α)
         end
-        @objective(model, Min, 0.5*u'*H*u + F'*u)
+        @objective(model, Min, 0.5 * u' * H * u + F' * u)
 
         # Add control bounds on system - recall these default to unbounded controls
         if ~(Inf in Σ.b)
@@ -54,19 +54,19 @@ function CBFQuadProg(Σ::ControlAffineSystem, CBFs::Vector{ControlBarrierFunctio
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
-    CBFs::Vector{ControlBarrierFunction}, 
-    k::FeedbackController
-    )
+    Σ::ControlAffineSystem,
+    CBFs::Vector{ControlBarrierFunction},
+    k::FeedbackController,
+)
     # Set parameters for objective function
     H = Σ.m == 1 ? 1.0 : Matrix(1.0I, Σ.m, Σ.m)
-    F(x) = -H*k(x)
+    F(x) = -H * k(x)
 
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Set CBF constraint and objective
@@ -74,9 +74,9 @@ function CBFQuadProg(
             Lfh = drift_lie_derivative(CBF, Σ, x)
             Lgh = control_lie_derivative(CBF, Σ, x)
             α = CBF.α(CBF.h(x))
-            @constraint(model, Lfh + Lgh*u >= -α)
+            @constraint(model, Lfh + Lgh * u >= -α)
         end
-        @objective(model, Min, 0.5*u'*H*u + F(x)'*u)
+        @objective(model, Min, 0.5 * u' * H * u + F(x)' * u)
 
         # Add control bounds on system - recall these default to unbounded controls
         if ~(Inf in Σ.b)
@@ -93,19 +93,19 @@ function CBFQuadProg(
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
-    CBFs::Vector{ControlBarrierFunction}, 
+    Σ::ControlAffineSystem,
+    CBFs::Vector{ControlBarrierFunction},
     k::FeedbackController,
-    H::Union{Float64, Matrix{Float64}}
-    )
+    H::Union{T, Matrix{T}},
+) where T <: Real
     # Set parameters for objective function
-    F(x) = -H*k(x)
+    F(x) = -H * k(x)
 
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Set CBF constraint and objective
@@ -113,9 +113,9 @@ function CBFQuadProg(
             Lfh = drift_lie_derivative(CBF, Σ, x)
             Lgh = control_lie_derivative(CBF, Σ, x)
             α = CBF.α(CBF.h(x))
-            @constraint(model, Lfh + Lgh*u >= -α)
+            @constraint(model, Lfh + Lgh * u >= -α)
         end
-        @objective(model, Min, 0.5*u'*H*u + F(x)'*u)
+        @objective(model, Min, 0.5 * u' * H * u + F(x)' * u)
 
         # Add control bounds on system - recall these default to unbounded controls
         if ~(Inf in Σ.b)
@@ -132,19 +132,19 @@ function CBFQuadProg(
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
-    CBFs::Vector{ControlBarrierFunction}, 
+    Σ::ControlAffineSystem,
+    CBFs::Vector{ControlBarrierFunction},
     k::FeedbackController,
-    H::Function
-    )
+    H::Function,
+)
     # Set parameters for objective function
-    F(x) = -H(x)*k(x)
+    F(x) = -H(x) * k(x)
 
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Set CBF constraint and objective
@@ -152,9 +152,9 @@ function CBFQuadProg(
             Lfh = drift_lie_derivative(CBF, Σ, x)
             Lgh = control_lie_derivative(CBF, Σ, x)
             α = CBF.α(CBF.h(x))
-            @constraint(model, Lfh + Lgh*u >= -α)
+            @constraint(model, Lfh + Lgh * u >= -α)
         end
-        @objective(model, Min, 0.5*u'*H(x)*u + F(x)'*u)
+        @objective(model, Min, 0.5 * u' * H(x) * u + F(x)' * u)
 
         # Add control bounds on system - recall these default to unbounded controls
         if ~(Inf in Σ.b)
@@ -171,16 +171,16 @@ function CBFQuadProg(
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
-    CBFs::Vector{ControlBarrierFunction}, 
+    Σ::ControlAffineSystem,
+    CBFs::Vector{ControlBarrierFunction},
     H::Function,
-    F::Function
-    )
+    F::Function,
+)
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Set CBF constraint and objective
@@ -188,9 +188,9 @@ function CBFQuadProg(
             Lfh = drift_lie_derivative(CBF, Σ, x)
             Lgh = control_lie_derivative(CBF, Σ, x)
             α = CBF.α(CBF.h(x))
-            @constraint(model, Lfh + Lgh*u >= -α)
+            @constraint(model, Lfh + Lgh * u >= -α)
         end
-        @objective(model, Min, 0.5*u'*H(x)*u + F(x)'*u)
+        @objective(model, Min, 0.5 * u' * H(x) * u + F(x)' * u)
 
         # Add control bounds on system - recall these default to unbounded controls
         if ~(Inf in Σ.b)
@@ -207,16 +207,16 @@ function CBFQuadProg(
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
-    CBFs::Vector{ControlBarrierFunction}, 
-    H::Union{Float64, Matrix{Float64}},
-    F::Union{Float64, Vector{Float64}}
-    )
+    Σ::ControlAffineSystem,
+    CBFs::Vector{ControlBarrierFunction},
+    H::Union{T, Matrix{T}},
+    F::Union{T, Vector{T}},
+) where T <: Real
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Set CBF constraint and objective
@@ -224,9 +224,9 @@ function CBFQuadProg(
             Lfh = drift_lie_derivative(CBF, Σ, x)
             Lgh = control_lie_derivative(CBF, Σ, x)
             α = CBF.α(CBF.h(x))
-            @constraint(model, Lfh + Lgh*u >= -α)
+            @constraint(model, Lfh + Lgh * u >= -α)
         end
-        @objective(model, Min, 0.5*u'*H*u + F'*u)
+        @objective(model, Min, 0.5 * u' * H * u + F' * u)
 
         # Add control bounds on system - recall these default to unbounded controls
         if ~(Inf in Σ.b)
@@ -243,16 +243,16 @@ function CBFQuadProg(
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
-    CBFs::Vector{ControlBarrierFunction}, 
+    Σ::ControlAffineSystem,
+    CBFs::Vector{ControlBarrierFunction},
     H::Function,
-    F::Union{Float64, Vector{Float64}}
-    )
+    F::Union{T, Vector{T}},
+) where T <: Real
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Set CBF constraint and objective
@@ -260,9 +260,9 @@ function CBFQuadProg(
             Lfh = drift_lie_derivative(CBF, Σ, x)
             Lgh = control_lie_derivative(CBF, Σ, x)
             α = CBF.α(CBF.h(x))
-            @constraint(model, Lfh + Lgh*u >= -α)
+            @constraint(model, Lfh + Lgh * u >= -α)
         end
-        @objective(model, Min, 0.5*u'*H(x)*u + F'*u)
+        @objective(model, Min, 0.5 * u' * H(x) * u + F' * u)
 
         # Add control bounds on system - recall these default to unbounded controls
         if ~(Inf in Σ.b)
@@ -279,16 +279,16 @@ function CBFQuadProg(
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
-    CBFs::Vector{ControlBarrierFunction}, 
-    H::Union{Float64, Matrix{Float64}},
-    F::Function
-    )
+    Σ::ControlAffineSystem,
+    CBFs::Vector{ControlBarrierFunction},
+    H::Union{T, Matrix{T}},
+    F::Function,
+) where T <: Real
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Set CBF constraint and objective
@@ -296,9 +296,9 @@ function CBFQuadProg(
             Lfh = drift_lie_derivative(CBF, Σ, x)
             Lgh = control_lie_derivative(CBF, Σ, x)
             α = CBF.α(CBF.h(x))
-            @constraint(model, Lfh + Lgh*u >= -α)
+            @constraint(model, Lfh + Lgh * u >= -α)
         end
-        @objective(model, Min, 0.5*u'*H*u + F(x)'*u)
+        @objective(model, Min, 0.5 * u' * H * u + F(x)' * u)
 
         # Add control bounds on system - recall these default to unbounded controls
         if ~(Inf in Σ.b)
@@ -319,62 +319,62 @@ CBFQuadProg(Σ::ControlAffineSystem, CBF::ControlBarrierFunction) = CBFQuadProg(
 
 function CBFQuadProg(
     Σ::ControlAffineSystem,
-    CBF::ControlBarrierFunction, 
-    k::FeedbackController
-    )
+    CBF::ControlBarrierFunction,
+    k::FeedbackController,
+)
     return CBFQuadProg(Σ, [CBF], k)
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
-    CBF::ControlBarrierFunction, 
+    Σ::ControlAffineSystem,
+    CBF::ControlBarrierFunction,
     k::FeedbackController,
-    H::Union{Float64, Matrix{Float64}}
-    )
+    H::Union{T, Matrix{T}},
+) where T <: Real
     return CBFQuadProg(Σ, [CBF], k, H)
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
+    Σ::ControlAffineSystem,
     CBF::ControlBarrierFunction,
     k::FeedbackController,
-    H::Function
-    )
+    H::Function,
+)
     return CBFQuadProg(Σ, [CBF], k, H)
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
+    Σ::ControlAffineSystem,
     CBF::ControlBarrierFunction,
     H::Function,
-    F::Function
-    )
+    F::Function,
+)
     return CBFQuadProg(Σ, [CBF], H, F)
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
+    Σ::ControlAffineSystem,
     CBF::ControlBarrierFunction,
-    H::Union{Float64, Matrix{Float64}},
-    F::Union{Float64, Vector{Float64}}
-    )
+    H::Union{T, Matrix{T}},
+    F::Union{T, Vector{T}},
+) where T <: Real
     return CBFQuadProg(Σ, [CBF], H, F)
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
-    CBF::ControlBarrierFunction, 
+    Σ::ControlAffineSystem,
+    CBF::ControlBarrierFunction,
     H::Function,
-    F::Union{Float64, Vector{Float64}}
-    )
+    F::Union{T, Vector{T}},
+) where T <: Real
     return CBFQuadProg(Σ, [CBF], H, F)
 end
 
 function CBFQuadProg(
-    Σ::ControlAffineSystem, 
+    Σ::ControlAffineSystem,
     CBF::ControlBarrierFunction,
-    H::Union{Float64, Matrix{Float64}},
-    F::Function
-    )
+    H::Union{T, Matrix{T}},
+    F::Function,
+) where T <: Real
     return CBFQuadProg(Σ, [CBF], H, F)
 end

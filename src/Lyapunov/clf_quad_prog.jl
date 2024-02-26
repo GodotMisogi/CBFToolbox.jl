@@ -9,10 +9,10 @@ for a control affine system
 - `H` : quadratic weight in QP objective
 - `F` : linear weight in QP objective
 """
-struct CLFQuadProg <: FeedbackController
+struct CLFQuadProg{T <: Real} <: FeedbackController
     solve::Function
-    H::Union{Float64, Matrix{Float64}, Function}
-    F::Union{Float64, Vector{Float64}, Function}
+    H::Union{T, Matrix{T}, Function}
+    F::Union{T, Vector{T}, Function}
 end
 
 "Solve `CLFQuadProg` at state `x`."
@@ -33,7 +33,7 @@ function CLFQuadProg(Σ::ControlAffineSystem, CLF::ControlLyapunovFunction)
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Compute Lie derivatives
@@ -44,11 +44,11 @@ function CLFQuadProg(Σ::ControlAffineSystem, CLF::ControlLyapunovFunction)
         # Check if we're relaxing the CLF constraint
         if CLF.relax
             @variable(model, δ)
-            @constraint(model, LfV + LgV*u <= -γ + δ)
-            @objective(model, Min, 0.5*u'*H*u + F'*u + CLF.p*δ^2)
+            @constraint(model, LfV + LgV * u <= -γ + δ)
+            @objective(model, Min, 0.5 * u' * H * u + F' * u + CLF.p * δ^2)
         else
-            @constraint(model, LfV + LgV*u <= -γ)
-            @objective(model, Min, 0.5*u'*H*u + F'*u)
+            @constraint(model, LfV + LgV * u <= -γ)
+            @objective(model, Min, 0.5 * u' * H * u + F' * u)
         end
 
         # Add control bounds on system - recall these default to unbounded controls
@@ -68,15 +68,15 @@ end
 function CLFQuadProg(
     Σ::ControlAffineSystem,
     CLF::ControlLyapunovFunction,
-    H::Union{Float64, Matrix{Float64}},
-    F::Union{Float64, Vector{Float64}}
-    )
+    H::Union{T, Matrix{T}},
+    F::Union{T, Vector{T}},
+) where T <: Real
 
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Compute Lie derivatives
@@ -87,54 +87,11 @@ function CLFQuadProg(
         # Check if we're relaxing the CLF constraint
         if CLF.relax
             @variable(model, δ)
-            @constraint(model, LfV + LgV*u <= -γ + δ)
-            @objective(model, Min, 0.5*u'*H*u + F'*u + CLF.p*δ^2)
+            @constraint(model, LfV + LgV * u <= -γ + δ)
+            @objective(model, Min, 0.5 * u' * H * u + F' * u + CLF.p * δ^2)
         else
-            @constraint(model, LfV + LgV*u <= -γ)
-            @objective(model, Min, 0.5*u'*H*u + F'*u)
-        end
-
-        # Add control bounds on system - recall these default to unbounded controls
-        if ~(Inf in Σ.b)
-            @constraint(model, Σ.A * u .<= Σ.b)
-        end
-
-        # Solve QP
-        optimize!(model)
-
-        return Σ.m == 1 ? value(u) : value.(u)
-    end
-
-    return CLFQuadProg(solve, H, F)
-end
-
-function CLFQuadProg(
-    Σ::ControlAffineSystem,
-    CLF::ControlLyapunovFunction,
-    H::Function,
-    F::Function
-    )
-
-    # Construct quadratic program
-    function solve(x)
-        # Build QP and instantiate control decision variable
-        model = Model(OSQP.Optimizer)
-        set_silent(model)
-        Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
-
-        # Compute Lie derivatives
-        LfV = drift_lie_derivative(CLF, Σ, x)
-        LgV = control_lie_derivative(CLF, Σ, x)
-        γ = CLF.α(x)
-
-        # Check if we're relaxing the CLF constraint
-        if CLF.relax
-            @variable(model, δ)
-            @constraint(model, LfV + LgV*u <= -γ + δ)
-            @objective(model, Min, 0.5*u'*H(x)*u + F(x)'*u + CLF.p*δ^2)
-        else
-            @constraint(model, LfV + LgV*u <= -γ)
-            @objective(model, Min, 0.5*u'*H(x)*u + F(x)'*u)
+            @constraint(model, LfV + LgV * u <= -γ)
+            @objective(model, Min, 0.5 * u' * H * u + F' * u)
         end
 
         # Add control bounds on system - recall these default to unbounded controls
@@ -155,14 +112,14 @@ function CLFQuadProg(
     Σ::ControlAffineSystem,
     CLF::ControlLyapunovFunction,
     H::Function,
-    F::Union{Float64, Vector{Float64}}
-    )
+    F::Function,
+)
 
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Compute Lie derivatives
@@ -173,11 +130,11 @@ function CLFQuadProg(
         # Check if we're relaxing the CLF constraint
         if CLF.relax
             @variable(model, δ)
-            @constraint(model, LfV + LgV*u <= -γ + δ)
-            @objective(model, Min, 0.5*u'*H(x)*u + F'*u + CLF.p*δ^2)
+            @constraint(model, LfV + LgV * u <= -γ + δ)
+            @objective(model, Min, 0.5 * u' * H(x) * u + F(x)' * u + CLF.p * δ^2)
         else
-            @constraint(model, LfV + LgV*u <= -γ)
-            @objective(model, Min, 0.5*u'*H(x)*u + F'*u)
+            @constraint(model, LfV + LgV * u <= -γ)
+            @objective(model, Min, 0.5 * u' * H(x) * u + F(x)' * u)
         end
 
         # Add control bounds on system - recall these default to unbounded controls
@@ -197,15 +154,15 @@ end
 function CLFQuadProg(
     Σ::ControlAffineSystem,
     CLF::ControlLyapunovFunction,
-    H::Union{Float64, Matrix{Float64}},
-    F::Function
-    )
+    H::Function,
+    F::Union{T, Vector{T}},
+) where T <: Real
 
     # Construct quadratic program
     function solve(x)
         # Build QP and instantiate control decision variable
         model = Model(OSQP.Optimizer)
-        set_silent(model)
+        # set_silent(model)
         Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
 
         # Compute Lie derivatives
@@ -216,11 +173,54 @@ function CLFQuadProg(
         # Check if we're relaxing the CLF constraint
         if CLF.relax
             @variable(model, δ)
-            @constraint(model, LfV + LgV*u <= -γ + δ)
-            @objective(model, Min, 0.5*u'*H*u + F(x)'*u + CLF.p*δ^2)
+            @constraint(model, LfV + LgV * u <= -γ + δ)
+            @objective(model, Min, 0.5 * u' * H(x) * u + F' * u + CLF.p * δ^2)
         else
-            @constraint(model, LfV + LgV*u <= -γ)
-            @objective(model, Min, 0.5*u'*H*u + F(x)'*u)
+            @constraint(model, LfV + LgV * u <= -γ)
+            @objective(model, Min, 0.5 * u' * H(x) * u + F' * u)
+        end
+
+        # Add control bounds on system - recall these default to unbounded controls
+        if ~(Inf in Σ.b)
+            @constraint(model, Σ.A * u .<= Σ.b)
+        end
+
+        # Solve QP
+        optimize!(model)
+
+        return Σ.m == 1 ? value(u) : value.(u)
+    end
+
+    return CLFQuadProg(solve, H, F)
+end
+
+function CLFQuadProg(
+    Σ::ControlAffineSystem,
+    CLF::ControlLyapunovFunction,
+    H::Union{T, Matrix{T}},
+    F::Function,
+) where T <: Real
+
+    # Construct quadratic program
+    function solve(x)
+        # Build QP and instantiate control decision variable
+        model = Model(OSQP.Optimizer)
+        # set_silent(model)
+        Σ.m == 1 ? @variable(model, u) : @variable(model, u[1:Σ.m])
+
+        # Compute Lie derivatives
+        LfV = drift_lie_derivative(CLF, Σ, x)
+        LgV = control_lie_derivative(CLF, Σ, x)
+        γ = CLF.α(x)
+
+        # Check if we're relaxing the CLF constraint
+        if CLF.relax
+            @variable(model, δ)
+            @constraint(model, LfV + LgV * u <= -γ + δ)
+            @objective(model, Min, 0.5 * u' * H * u + F(x)' * u + CLF.p * δ^2)
+        else
+            @constraint(model, LfV + LgV * u <= -γ)
+            @objective(model, Min, 0.5 * u' * H * u + F(x)' * u)
         end
 
         # Add control bounds on system - recall these default to unbounded controls

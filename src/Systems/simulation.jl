@@ -8,12 +8,12 @@ dynamical system from an initial condition under a specified control policy.
 - `t0::Float64`: Initial simulation time - defaults to zero.
 - `tf::Float64`: Ending simulation time.
 """
-struct Simulation
-    t0::Float64
-    tf::Float64
+struct Simulation{T <: Real}
+    t0::T
+    tf::T
     inplace::Bool
 end
 
 # Simulation constructor from simulation end time
-Simulation(T::Float64) = Simulation(0.0, T, true)
-Simulation(T::Float64, inplace::Bool) = Simulation(0.0, T, inplace)
+Simulation(T::Real) = Simulation(0.0, T, true)
+Simulation(T::Real, inplace::Bool) = Simulation(0.0, T, inplace)
