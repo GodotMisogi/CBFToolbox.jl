@@ -36,7 +36,7 @@ end
 function (S::Simulation)(
     Σ::ControlAffineSystem, 
     d::MatchedDisturbance, 
-    x::Union{Float64, Vector{Float64}}
+    x
     )
     right_hand_side(x, p, t) = Σ.f(x) + Σ.g(x)*d(x,t)
     problem = ODEProblem(right_hand_side, x, [S.t0, S.tf])
@@ -49,7 +49,7 @@ function (S::Simulation)(
     Σ::ControlAffineSystem,
     k::FeedbackController,
     d::MatchedDisturbance, 
-    x::Union{Float64, Vector{Float64}}
+    x
     )
     right_hand_side(x, p, t) = Σ.f(x) + Σ.g(x)*(k(x) + d(x,t))
     problem = ODEProblem(right_hand_side, x, [S.t0, S.tf])

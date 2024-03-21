@@ -89,11 +89,11 @@ end
 ############################################################################################
 
 """
-    (S::Simulation)(Σ::ControlAffineSystem, x::Union{T, Vector{T}})
+    (S::Simulation)(Σ::ControlAffineSystem, x)
 
 Run open-loop simulation of control affine system from initial state x.
 """
-function (S::Simulation)(Σ::ControlAffineSystem, x::Union{T, Vector{T}}) where T <: Real
+function (S::Simulation)(Σ::ControlAffineSystem, x)
     # Make in-place and out of place rhs functions
     rhs(x, p, t) = Σ.f(x)
 
@@ -103,13 +103,13 @@ function (S::Simulation)(Σ::ControlAffineSystem, x::Union{T, Vector{T}}) where 
     end
 
     problem = S.inplace ? ODEProblem(rhs!, x, S.tf) : ODEProblem(rhs, x, S.tf)
-    trajectory = solve(problem)
+    # trajectory = solve(problem)
 
-    return trajectory
+    return problem
 end
 
 """
-    (S::Simulation)(Σ::ControlAffineSystem, k::FeedbackController, x::Union{T, Vector{T}})
+    (S::Simulation)(Σ::ControlAffineSystem, k::FeedbackController, x)
 
 Run closed-loop simulation of control affine system from initial state x under feedback
 control policy.
@@ -117,8 +117,8 @@ control policy.
 function (S::Simulation)(
     Σ::ControlAffineSystem,
     k::FeedbackController,
-    x::Union{T, Vector{T}},
-) where T <: Real
+    x,
+)
 
     # Make in-place and out of place rhs functions
     function rhs(x, p, t)
@@ -134,9 +134,9 @@ function (S::Simulation)(
     end
 
     problem = S.inplace ? ODEProblem(rhs!, x, S.tf) : ODEProblem(rhs, x, S.tf)
-    trajectory = solve(problem)
+    # trajectory = solve(problem)
 
-    return trajectory
+    return problem
 end
 
 """

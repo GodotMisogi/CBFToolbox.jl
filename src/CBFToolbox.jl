@@ -4,7 +4,7 @@ module CBFToolbox
 using LinearAlgebra
 using ForwardDiff
 using JuMP
-using OSQP
+using OSQP, Ipopt
 using Plots
 import DifferentialEquations: solve, ODEProblem
 using SimulationLogs
